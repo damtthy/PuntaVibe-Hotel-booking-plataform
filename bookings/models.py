@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Q
 from decimal import Decimal
+from datetime import date, datetime
 
 class Suite(models.Model):  
     name = models.CharField(max_length=100)
@@ -30,7 +31,14 @@ class Booking(models.Model):
         return f"Reserva de {self.user.username} - {self.suite.name}"
 
     def save(self, *args, **kwargs):
-        # 1. Calcular la cantidad de noches
+        # --- BLINDAJE DE FECHAS PARA LA API ---
+        # Si las fechas entran como string (JSON de la API), las convertimos a objetos date
+        if isinstance(self.check_in, str):
+            self.check_in = datetime.strptime(self.check_in, "%Y-%m-%d").date()
+        if isinstance(self.check_out, str):
+            self.check_out = datetime.strptime(self.check_out, "%Y-%m-%d").date()
+
+        # 1. Calcular la cantidad de noches (ahora 100% seguro de que son objetos date)
         nights = (self.check_out - self.check_in).days
         if nights <= 0:
             nights = 1 
@@ -62,7 +70,7 @@ class Booking(models.Model):
         elif occupancy_rate >= 70:  # Queda menos del 30% disponible
             occupancy_multiplier = Decimal('1.20')
             
-        # 3. La gran ecuación final de Punta Vibe (multiplicamos Decimal con Decimal)
+        # 3. La gran ecuación final de Punta Vibe
         self.total_price = base * nights * mult * occupancy_multiplier
         
         # 4. Guardar definitivo en la base de datos

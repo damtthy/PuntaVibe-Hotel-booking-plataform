@@ -20,19 +20,19 @@ class SuiteSerializer(serializers.ModelSerializer):
         model = Suite
         fields = '__all__'
 
-# 4. Serializador de Reservas (Booking)
 class BookingSerializer(serializers.ModelSerializer):
-    # Campos de solo lectura para cuando React pida ver los detalles renderizados con nombres y no solo IDs
     user_details = UserSerializer(source='user', read_only=True)
     suite_details = SuiteSerializer(source='suite', read_only=True)
     season_details = SeasonSerializer(source='season', read_only=True)
+
+    check_in = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d", "iso-8601"])
+    check_out = serializers.DateField(format="%Y-%m-%d", input_formats=["%Y-%m-%d", "iso-8601"])
 
     class Meta:
         model = Booking
         fields = [
             'id', 'user', 'user_details', 'suite', 'suite_details', 
             'season', 'season_details', 'check_in', 'check_out', 
-            'total_price', 'created_at'
+            'total_price'
         ]
-        # El precio total lo calcularemos en el backend por seguridad, no queremos que lo mande el cliente
-        read_only_fields = ['total_price', 'created_at']
+        read_only_fields = ['total_price']
