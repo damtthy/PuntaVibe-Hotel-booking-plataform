@@ -1,8 +1,30 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Suite, Season, Booking  # Asegurate de que estos sean los nombres exactos de tus modelos
 
-# 1. Serializador de Usuarios (para saber quién reserva)
+User = get_user_model()
+
+class RegisterSerializer(serializers.ModelSerializer):
+    # Definimos la contraseña como "solo escritura" para que no se devuelva nunca en el JSON
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'first_name', 'last_name']
+
+    def create(self, validated_data):
+        # Usamos estrictamente create_user para que Django encripte la contraseña en la BD
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data.get('email', ''),
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', '')
+        )
+        return user
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -36,3 +58,14 @@ class BookingSerializer(serializers.ModelSerializer):
             'total_price'
         ]
         read_only_fields = ['total_price']
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly', 
+        # Permite ver suites/disponibilidad sin loguearse (Visitor), 
+        # pero exige login para reservar (Customer).
+    )
+}

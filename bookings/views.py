@@ -1,7 +1,13 @@
 from rest_framework import viewsets
 from django.contrib.auth.models import User
 from .models import Suite, Season, Booking
-from .serializers import UserSerializer, SuiteSerializer, SeasonSerializer, BookingSerializer
+from .serializers import UserSerializer, SuiteSerializer, SeasonSerializer, BookingSerializer, RegisterSerializer
+
+from rest_framework import generics
+from rest_framework.permissions import AllowAny
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 # 1. Ventanilla para manejar Usuarios
 class UserViewSet(viewsets.ModelViewSet):
@@ -30,3 +36,8 @@ class BookingViewSet(viewsets.ModelViewSet):
         Por ahora, dejamos que DRF use la lógica estándar.
         """
         serializer.save()
+
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = [AllowAny] # Permiso abierto: cualquiera puede registrarse sin estar logueado
+    serializer_class = RegisterSerializer
